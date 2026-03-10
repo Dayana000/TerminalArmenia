@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,12 +50,21 @@ public class UserController {
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User savedUser = userRepository.save(user);
 
-        return userRepository.save(user);
+        return hidePassword(savedUser);
     }
 
     @PostMapping("/login")
     public Object login(@RequestBody User user) {
+
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            return "El correo es obligatorio";
+        }
+
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            return "La contraseña es obligatoria";
+        }
 
         Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
 
@@ -63,7 +73,7 @@ public class UserController {
                     passwordEncoder.matches(user.getPassword(), foundUser.get().getPassword());
 
             if (passwordCorrect) {
-                return foundUser.get();
+                return hidePassword(foundUser.get());
             }
         }
 
@@ -72,6 +82,23 @@ public class UserController {
 
     @GetMapping
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        List<User> users = userRepository.findAll();
+        List<User> safeUsers = new ArrayList<>();
+
+        for (User user : users) {
+            safeUsers.add(hidePassword(user));
+        }
+
+        return safeUsers;
+    }
+
+    private User hidePassword(User user) {
+        User safeUser = new User();
+        safeUser.setId(user.getId());
+        safeUser.setName(user.getName());
+        safeUser.setEmail(user.getEmail());
+        safeUser.setRole(user.getRole());
+        safeUser.setPassword(null);
+        return safeUser;
     }
 }
