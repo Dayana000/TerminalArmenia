@@ -16,7 +16,30 @@ public class RouteController {
     private RouteRepository routeRepository;
 
     @PostMapping
-    public Route createRoute(@RequestBody Route route) {
+    public Object createRoute(@RequestBody Route route) {
+
+        if (route.getOrigin() == null || route.getOrigin().isBlank()) {
+            return "El origen es obligatorio";
+        }
+
+        if (route.getDestination() == null || route.getDestination().isBlank()) {
+            return "El destino es obligatorio";
+        }
+
+        if (route.getSchedule() == null || route.getSchedule().isBlank()) {
+            return "El horario es obligatorio";
+        }
+
+        if (route.getPrice() <= 0) {
+            return "El precio debe ser mayor que cero";
+        }
+
+        if (route.getCapacity() <= 0) {
+            return "La capacidad debe ser mayor que cero";
+        }
+
+        route.setAvailableSeats(route.getCapacity());
+
         return routeRepository.save(route);
     }
 
