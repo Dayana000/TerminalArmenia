@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rutas Disponibles — Terminal Armenia</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="headerMount"></div>
+
+  <div class="page-wrapper">
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('rutas', this)">🔍 Buscar Rutas</button>
+      <button class="tab" onclick="showTab('misreservas', this)">🎫 Mis Reservas</button>
+    </div>
+
+    <!-- ── SECCIÓN RUTAS ── -->
+    <div id="secRutas">
+      <div class="page-title">
+        <div>
+          <h2>Rutas Disponibles</h2>
+          <p>Selecciona una ruta para hacer tu reserva</p>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="searchRuta" placeholder="🔍  Buscar por origen o destino…" oninput="filterRoutes()">
+      </div>
+
+      <div id="routesGrid" class="routes-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
+          <div class="spinner" style="margin:0 auto 16px"></div>
+          <p>Cargando rutas disponibles…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MIS RESERVAS ── -->
+    <div id="secMisReservas" style="display:none">
+      <div class="page-title">
+        <div>
+          <h2>Mis Reservas</h2>
+          <p>Historial y estado de tus reservas</p>
+        </div>
+      </div>
+      <div id="misReservasList">
+        <div style="text-align:center;padding:60px;color:var(--muted)">
+          <div class="spinner" style="margin:0 auto 16px"></div>
+          <p>Cargando tus reservas…</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RESERVAR -->
+  <div class="modal-overlay" id="modalReserva">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Confirmar Reserva</h3>
+        <button class="modal-close" onclick="closeModal('modalReserva')">✕</button>
+      </div>
+
+      <div class="modal-route-summary" id="modalRouteSummary">
+        <!-- Se llena dinámicamente -->
+      </div>
+
+      <div class="form-group">
+        <label>Número de asiento</label>
+        <input id="seatInput" type="text" placeholder="Ej. 12A, 7B, 23C…">
+        <p class="text-muted mt-8">Ingresa el número o código del asiento que deseas</p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modalReserva')">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1" onclick="confirmReservation()">
+          <span id="resBtnText">🎫 Reservar Tiquete</span>
+          <span id="resSpinner" class="spinner" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TIQUETE EXITOSO -->
+  <div class="modal-overlay" id="modalTicket">
+    <div class="modal" style="text-align:center">
+      <div style="font-size:56px;margin-bottom:12px">🎉</div>
+      <h3 style="font-size:22px;margin-bottom:8px">¡Reserva exitosa!</h3>
+      <p class="text-muted" style="margin-bottom:24px">Tu tiquete ha sido generado</p>
+
+      <div style="background:var(--bg3);border:2px dashed var(--border);border-radius:12px;padding:24px;margin-bottom:24px">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px">N° de Reserva</div>
+        <div id="ticketNumber" style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--accent)"></div>
+        <div class="divider"></div>
+        <div id="ticketDetails" style="font-size:13px;color:var(--muted);line-height:1.8"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="closeModal('modalTicket');loadMyReservations()">
+        Ver mis reservas
+      </button>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="utils.js"></script>
+  <script src="routes-view.js"></script>
+</body>
+</html>

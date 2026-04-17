@@ -15,14 +15,13 @@ public class Route {
     private String origin;
     private String destination;
     private String schedule;
-    private double price;
-    private int capacity;
-    private int availableSeats;
+    private Double price;
+    private Integer capacity;
+    private Integer availableSeats;
 
-    public Route() {
-    }
+    public Route() {}
 
-    public Route(Long id, String origin, String destination, String schedule, double price, int capacity, int availableSeats) {
+    public Route(Long id, String origin, String destination, String schedule, Double price, Integer capacity, Integer availableSeats) {
         this.id = id;
         this.origin = origin;
         this.destination = destination;
@@ -32,59 +31,19 @@ public class Route {
         this.availableSeats = availableSeats;
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public String getOrigin() { return origin; }
+    public String getDestination() { return destination; }
+    public String getSchedule() { return schedule; }
+    public Double getPrice() { return price; }
+    public Integer getCapacity() { return capacity; }
+    public Integer getAvailableSeats() { return availableSeats; }
 
-    public String getOrigin() {
-        return origin;
-    }
-
-    public String getDestination() {
-        return destination;
-    }
-
-    public String getSchedule() {
-        return schedule;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public int getCapacity() {
-        return capacity;
-    }
-
-    public int getAvailableSeats() {
-        return availableSeats;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setOrigin(String origin) {
-        this.origin = origin;
-    }
-
-    public void setDestination(String destination) {
-        this.destination = destination;
-    }
-
-    public void setSchedule(String schedule) {
-        this.schedule = schedule;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
-    public void setCapacity(int capacity) {
-        this.capacity = capacity;
-    }
-
-    public void setAvailableSeats(int availableSeats) {
-        this.availableSeats = availableSeats;
-    }
+    public void setId(Long id) { this.id = id; }
+    public void setOrigin(String origin) { this.origin = origin; }
+    public void setDestination(String destination) { this.destination = destination; }
+    public void setSchedule(String schedule) { this.schedule = schedule; }
+    public void setPrice(Double price) { this.price = price; }
+    public void setCapacity(Integer capacity) { this.capacity = capacity; }
+    public void setAvailableSeats(Integer availableSeats) { this.availableSeats = availableSeats; }
 }

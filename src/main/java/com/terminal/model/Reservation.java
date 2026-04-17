@@ -1,11 +1,10 @@
 package com.terminal.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "reservations")
 public class Reservation {
 
     @Id
@@ -16,45 +15,56 @@ public class Reservation {
     private Long routeId;
     private String seat;
 
-    public Reservation() {
-    }
+    @Column(unique = true)
+    private String reservationNumber;
 
-    public Reservation(Long id, Long userId, Long routeId, String seat) {
-        this.id = id;
-        this.userId = userId;
-        this.routeId = routeId;
-        this.seat = seat;
-    }
+    private String status; // RESERVADA, CONFIRMADA, CANCELADA
 
-    public Long getId() {
-        return id;
-    }
+    private LocalDateTime createdAt;
 
-    public Long getUserId() {
-        return userId;
-    }
+    // Datos desnormalizados para consulta rápida
+    private String passengerName;
+    private String origin;
+    private String destination;
+    private String schedule;
+    private Double price;
 
-    public Long getRouteId() {
-        return routeId;
-    }
+    public Reservation() {}
 
-    public String getSeat() {
-        return seat;
-    }
+    // Getters y Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    public Long getRouteId() { return routeId; }
+    public void setRouteId(Long routeId) { this.routeId = routeId; }
 
-    public void setRouteId(Long routeId) {
-        this.routeId = routeId;
-    }
+    public String getSeat() { return seat; }
+    public void setSeat(String seat) { this.seat = seat; }
 
-    public void setSeat(String seat) {
-        this.seat = seat;
-    }
+    public String getReservationNumber() { return reservationNumber; }
+    public void setReservationNumber(String reservationNumber) { this.reservationNumber = reservationNumber; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getPassengerName() { return passengerName; }
+    public void setPassengerName(String passengerName) { this.passengerName = passengerName; }
+
+    public String getOrigin() { return origin; }
+    public void setOrigin(String origin) { this.origin = origin; }
+
+    public String getDestination() { return destination; }
+    public void setDestination(String destination) { this.destination = destination; }
+
+    public String getSchedule() { return schedule; }
+    public void setSchedule(String schedule) { this.schedule = schedule; }
+
+    public Double getPrice() { return price; }
+    public void setPrice(Double price) { this.price = price; }
 }

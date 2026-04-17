@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Rutas — Terminal Armenia</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="headerMount"></div>
+
+  <div class="page-wrapper">
+    <!-- Tabs -->
+    <div class="tabs" id="navTabs">
+      <button class="tab active" onclick="showTab('rutas')">🗺️ Rutas</button>
+      <button class="tab" onclick="showTab('reservas')" id="tabReservas">📋 Reservas</button>
+    </div>
+
+    <!-- ── SECCIÓN RUTAS ── -->
+    <div id="secRutas">
+      <div class="page-title">
+        <div>
+          <h2>Gestión de Rutas</h2>
+          <p>Registra, edita y elimina rutas de transporte</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modalRuta')" style="width:auto">
+          ＋ Nueva Ruta
+        </button>
+      </div>
+
+      <div class="stats-grid" id="statsRutas">
+        <div class="stat-card">
+          <div class="stat-icon">🗺️</div>
+          <div class="stat-label">Total Rutas</div>
+          <div class="stat-value" id="statTotal">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💺</div>
+          <div class="stat-label">Cupos disponibles</div>
+          <div class="stat-value" id="statCupos">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label">Precio promedio</div>
+          <div class="stat-value" id="statPrecio">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <div class="icon">🗺️</div> Rutas Registradas
+        </div>
+        <div class="search-bar">
+          <input type="text" id="searchRuta" placeholder="Buscar por origen o destino…" oninput="filterRoutes()">
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Origen</th><th>Destino</th><th>Horario</th>
+                <th>Precio</th><th>Capacidad</th><th>Disponibles</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="routesTableBody">
+              <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">Cargando rutas…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN RESERVAS (solo ADMIN) ── -->
+    <div id="secReservas" style="display:none">
+      <div class="page-title">
+        <div>
+          <h2>Control de Reservas</h2>
+          <p>Visualiza y gestiona todas las reservas del sistema</p>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-label">Total</div>
+          <div class="stat-value" id="rStatTotal">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🟡</div>
+          <div class="stat-label">Reservadas</div>
+          <div class="stat-value" id="rStatReservadas">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🟢</div>
+          <div class="stat-label">Confirmadas</div>
+          <div class="stat-value" id="rStatConfirmadas">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔴</div>
+          <div class="stat-label">Canceladas</div>
+          <div class="stat-value" id="rStatCanceladas">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="icon">📋</div> Todas las Reservas</div>
+        <div class="search-bar">
+          <input type="text" id="searchRes" placeholder="Buscar por número, pasajero, origen…" oninput="filterReservations()">
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>N° Reserva</th><th>Pasajero</th><th>Ruta</th>
+                <th>Horario</th><th>Asiento</th><th>Precio</th><th>Estado</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="reservationsTableBody">
+              <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NUEVA/EDITAR RUTA -->
+  <div class="modal-overlay" id="modalRuta">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalRutaTitle">Nueva Ruta</h3>
+        <button class="modal-close" onclick="closeModal('modalRuta')">✕</button>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Origen</label>
+          <input id="origin" placeholder="Ej. Armenia">
+        </div>
+        <div class="form-group">
+          <label>Destino</label>
+          <input id="destination" placeholder="Ej. Bogotá">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha de salida</label>
+          <input id="scheduleDate" type="date">
+        </div>
+        <div class="form-group">
+          <label>Hora de salida</label>
+          <input id="scheduleTime" type="time">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Precio (COP)</label>
+          <input id="price" type="number" placeholder="Ej. 45000">
+        </div>
+        <div class="form-group">
+          <label>Capacidad (asientos)</label>
+          <input id="capacity" type="number" placeholder="Ej. 40">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modalRuta')">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1" onclick="saveRoute()">
+          <span id="saveBtnText">Guardar Ruta</span>
+          <span id="saveSpinner" class="spinner" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="utils.js"></script>
+  <script src="routes.js"></script>
+</body>
+</html>
