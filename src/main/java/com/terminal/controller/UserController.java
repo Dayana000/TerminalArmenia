@@ -2,13 +2,13 @@ package com.terminal.controller;
 
 import com.terminal.model.User;
 import com.terminal.repository.UserRepository;
+import com.terminal.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/users")
@@ -18,53 +18,48 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     @PostMapping("/register")
     public Object register(@RequestBody User user) {
 
-        if (user.getName() == null || user.getName().isBlank()) {
-            return "El nombre es obligatorio";
-        }
+        if (user.getName() == null || user.getName().isBlank())
+            return ResponseEntity.badRequest().body("El nombre es obligatorio");
 
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            return "El correo es obligatorio";
-        }
+        if (user.getEmail() == null || user.getEmail().isBlank())
+            return ResponseEntity.badRequest().body("El correo es obligatorio");
 
-        if (!user.getEmail().contains("@") || !user.getEmail().contains(".")) {
-            return "Correo no válido";
-        }
+        if (!user.getEmail().contains("@") || !user.getEmail().contains("."))
+            return ResponseEntity.badRequest().body("Correo no valido");
 
-        if (user.getPassword() == null || user.getPassword().isBlank()) {
-            return "La contraseña es obligatoria";
-        }
+        if (user.getPassword() == null || user.getPassword().isBlank())
+            return ResponseEntity.badRequest().body("La contrasena es obligatoria");
 
-        if (user.getRole() == null || user.getRole().isBlank()) {
-            return "El rol es obligatorio";
-        }
+        if (user.getRole() == null || user.getRole().isBlank())
+            return ResponseEntity.badRequest().body("El rol es obligatorio");
 
         Optional<User> existingUser = userRepository.findByEmail(user.getEmail());
-
-        if (existingUser.isPresent()) {
-            return "El correo ya está registrado";
-        }
+        if (existingUser.isPresent())
+            return ResponseEntity.badRequest().body("El correo ya esta registrado");
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
 
-        return hidePassword(savedUser);
+        return ResponseEntity.ok(hidePassword(savedUser));
     }
 
     @PostMapping("/login")
     public Object login(@RequestBody User user) {
 
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            return "El correo es obligatorio";
-        }
+        if (user.getEmail() == null || user.getEmail().isBlank())
+            return ResponseEntity.badRequest().body("El correo es obligatorio");
 
-        if (user.getPassword() == null || user.getPassword().isBlank()) {
-            return "La contraseña es obligatoria";
-        }
+        if (user.getPassword() == null || user.getPassword().isBlank())
+            return ResponseEntity.badRequest().body("La contrasena es obligatoria");
 
         Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
 
@@ -73,22 +68,30 @@ public class UserController {
                     passwordEncoder.matches(user.getPassword(), foundUser.get().getPassword());
 
             if (passwordCorrect) {
-                return hidePassword(foundUser.get());
+                User u = foundUser.get();
+                String token = jwtUtil.generateToken(u.getEmail(), u.getRole());
+
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("token", token);
+                response.put("id", u.getId());
+                response.put("name", u.getName());
+                response.put("email", u.getEmail());
+                response.put("role", u.getRole());
+
+                return ResponseEntity.ok(response);
             }
         }
 
-        return "Credenciales incorrectas";
+        return ResponseEntity.status(401).body("Credenciales incorrectas");
     }
 
     @GetMapping
     public List<User> getAllUsers() {
         List<User> users = userRepository.findAll();
         List<User> safeUsers = new ArrayList<>();
-
-        for (User user : users) {
-            safeUsers.add(hidePassword(user));
+        for (User u : users) {
+            safeUsers.add(hidePassword(u));
         }
-
         return safeUsers;
     }
 

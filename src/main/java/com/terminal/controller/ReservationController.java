@@ -29,11 +29,10 @@ public class ReservationController {
     @Autowired
     private UserRepository userRepository;
 
-    // POST /reservations — Crear reserva con validación completa
+    // POST /reservations — Crear reserva (requiere autenticacion)
     @PostMapping
     public Object createReservation(@RequestBody Reservation reservation) {
 
-        // Validar que lleguen los datos mínimos
         if (reservation.getUserId() == null)
             return ResponseEntity.badRequest().body("El ID del usuario es obligatorio");
         if (reservation.getRouteId() == null)
@@ -41,12 +40,10 @@ public class ReservationController {
         if (reservation.getSeat() == null || reservation.getSeat().isBlank())
             return ResponseEntity.badRequest().body("El asiento es obligatorio");
 
-        // Buscar usuario
         Optional<User> userOpt = userRepository.findById(reservation.getUserId());
         if (userOpt.isEmpty())
             return ResponseEntity.badRequest().body("Usuario no encontrado");
 
-        // Buscar ruta
         Optional<Route> routeOpt = routeRepository.findById(reservation.getRouteId());
         if (routeOpt.isEmpty())
             return ResponseEntity.badRequest().body("Ruta no encontrada");
@@ -58,14 +55,22 @@ public class ReservationController {
         if (route.getAvailableSeats() == null || route.getAvailableSeats() <= 0)
             return ResponseEntity.badRequest().body("No hay asientos disponibles para esta ruta");
 
-        // Descontar cupo automáticamente
+        // Validar que el asiento no este ya reservado en esta ruta (Bug RNF-11 corregido)
+        boolean seatTaken = reservationRepository.findByRouteId(reservation.getRouteId())
+                .stream()
+                .anyMatch(r -> r.getSeat().equals(reservation.getSeat())
+                        && !"CANCELADA".equals(r.getStatus()));
+
+        if (seatTaken)
+            return ResponseEntity.badRequest().body("El asiento " + reservation.getSeat() + " ya esta reservado en esta ruta");
+
+        // Descontar cupo
         route.setAvailableSeats(route.getAvailableSeats() - 1);
         routeRepository.save(route);
 
-        // Generar número único de reserva
+        // Generar numero unico
         String reservationNumber = "TKT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-        // Armar la reserva completa
         reservation.setReservationNumber(reservationNumber);
         reservation.setStatus("RESERVADA");
         reservation.setCreatedAt(LocalDateTime.now());
@@ -79,13 +84,13 @@ public class ReservationController {
         return ResponseEntity.ok(saved);
     }
 
-    // GET /reservations — Todas las reservas (ADMIN)
+    // GET /reservations — Todas las reservas (solo ADMIN)
     @GetMapping
     public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
     }
 
-    // GET /reservations/user/{userId} — Reservas de un usuario (PASAJERO)
+    // GET /reservations/user/{userId} — Reservas de un usuario
     @GetMapping("/user/{userId}")
     public List<Reservation> getReservationsByUser(@PathVariable Long userId) {
         return reservationRepository.findByUserId(userId);
@@ -101,9 +106,8 @@ public class ReservationController {
         Reservation reservation = resOpt.get();
 
         if ("CANCELADA".equals(reservation.getStatus()))
-            return ResponseEntity.badRequest().body("La reserva ya está cancelada");
+            return ResponseEntity.badRequest().body("La reserva ya esta cancelada");
 
-        // Devolver el cupo a la ruta
         Optional<Route> routeOpt = routeRepository.findById(reservation.getRouteId());
         routeOpt.ifPresent(route -> {
             route.setAvailableSeats(route.getAvailableSeats() + 1);
@@ -115,7 +119,7 @@ public class ReservationController {
         return ResponseEntity.ok(reservation);
     }
 
-    // PUT /reservations/{id}/confirm — Confirmar reserva (ADMIN)
+    // PUT /reservations/{id}/confirm — Confirmar reserva (solo ADMIN)
     @PutMapping("/{id}/confirm")
     public Object confirmReservation(@PathVariable Long id) {
         Optional<Reservation> resOpt = reservationRepository.findById(id);
