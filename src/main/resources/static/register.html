@@ -1,59 +1,61 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crear Cuenta — Terminal Armenia</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta — Terminal Armenia</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="auth-wrapper">
+<div class="auth-wrapper">
     <div class="auth-brand">
-      <div class="logo-ring">🚌</div>
-      <h1>Terminal Armenia</h1>
-      <p>Sistema Digital de Gestión de Tiquetes</p>
+        <div class="logo-ring">🚌</div>
+        <h1>Terminal Armenia</h1>
+        <p>Sistema Digital de Gestión de Tiquetes</p>
     </div>
 
     <div class="auth-card">
-      <h2>Crear Cuenta</h2>
-      <p class="subtitle">Registra un nuevo usuario en el sistema</p>
+        <h2>Crear Cuenta</h2>
+        <p class="subtitle">Registra un nuevo usuario en el sistema</p>
 
-      <div class="form-group">
-        <label>Nombre completo</label>
-        <input id="name" type="text" placeholder="Ej. María García López">
-      </div>
+        <div class="form-group">
+            <label>Nombre completo</label>
+            <input id="name" type="text" placeholder="Ej. María García López">
+        </div>
 
-      <div class="form-group">
-        <label>Correo electrónico</label>
-        <input id="email" type="email" placeholder="tu@correo.com">
-      </div>
+        <div class="form-group">
+            <label>Correo electrónico</label>
+            <input id="email" type="email" placeholder="tu@correo.com">
+        </div>
 
-      <div class="form-group">
-        <label>Contraseña</label>
-        <input id="password" type="password" placeholder="Mínimo 6 caracteres">
-      </div>
+        <div class="form-group">
+            <label>Contraseña</label>
+            <input id="password" type="password" placeholder="Mínimo 8 caracteres, una letra y un número"
+                   pattern="(?=.*[a-zA-Z])(?=.*[0-9]).{8,}"
+                   title="Mínimo 8 caracteres, al menos una letra y un número">
+        </div>
 
-      <div class="form-group">
-        <label>Rol en el sistema</label>
-        <select id="role">
-          <option value="">Selecciona un rol</option>
-          <option value="PASAJERO">🧳 Pasajero</option>
-          <option value="ADMIN">⚙️ Administrador del Sistema</option>
-          <option value="EMPRESA">🏢 Empresa Transportadora</option>
-        </select>
-      </div>
+        <div class="form-group">
+            <label>Rol en el sistema</label>
+            <select id="role">
+                <option value="">Selecciona un rol</option>
+                <option value="PASAJERO">🧳 Pasajero</option>
+                <option value="ADMIN">⚙️ Administrador del Sistema</option>
+                <option value="EMPRESA">🏢 Empresa Transportadora</option>
+            </select>
+        </div>
 
-      <button class="btn btn-primary" id="registerBtn" onclick="register()">
-        <span id="btnText">Crear Cuenta</span>
-        <span id="btnSpinner" class="spinner" style="display:none;"></span>
-      </button>
+        <button class="btn btn-primary" id="registerBtn" onclick="register()">
+            <span id="btnText">Crear Cuenta</span>
+            <span id="btnSpinner" class="spinner" style="display:none;"></span>
+        </button>
 
-      <p class="link-line">¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
+        <p class="link-line">¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
     </div>
-  </div>
+</div>
 
-  <div class="toast-container" id="toastContainer"></div>
-  <script src="utils.js"></script>
-  <script src="register.js"></script>
+<div class="toast-container" id="toastContainer"></div>
+<script src="utils.js"></script>
+<script src="register.js"></script>
 </body>
 </html>

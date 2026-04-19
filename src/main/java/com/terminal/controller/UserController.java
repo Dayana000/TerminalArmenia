@@ -39,6 +39,15 @@ public class UserController {
         if (user.getPassword() == null || user.getPassword().isBlank())
             return ResponseEntity.badRequest().body("La contrasena es obligatoria");
 
+        if (user.getPassword().length() < 8)
+            return ResponseEntity.badRequest().body("La contrasena debe tener al menos 8 caracteres");
+
+        if (!user.getPassword().matches(".*[a-zA-Z].*"))
+            return ResponseEntity.badRequest().body("La contrasena debe contener al menos una letra");
+
+        if (!user.getPassword().matches(".*[0-9].*"))
+            return ResponseEntity.badRequest().body("La contrasena debe contener al menos un numero");
+
         if (user.getRole() == null || user.getRole().isBlank())
             return ResponseEntity.badRequest().body("El rol es obligatorio");
 
