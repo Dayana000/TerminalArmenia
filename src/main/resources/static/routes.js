@@ -9,6 +9,16 @@ let allRoutes = [];
 let allReservations = [];
 let editingRouteId = null;
 
+// ✅ Helper para incluir token JWT en todas las peticiones
+function authHeaders(extra = {}) {
+  const token = sessionStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...extra
+  };
+}
+
 // ── Tab switching ────────────────────────────────────────────
 function showTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -24,7 +34,9 @@ if (role !== 'ADMIN') document.getElementById('tabReservas').style.display = 'no
 // ── RUTAS ────────────────────────────────────────────────────
 async function loadRoutes() {
   try {
-    const res    = await fetch(`${API}/routes`);
+    const res    = await fetch(`${API}/routes`, {
+      headers: authHeaders()  // ✅ con token
+    });
     allRoutes    = await res.json();
     renderRoutes(allRoutes);
     updateRouteStats(allRoutes);
@@ -103,7 +115,11 @@ async function saveRoute() {
   try {
     const url    = editingRouteId ? `${API}/routes/${editingRouteId}` : `${API}/routes`;
     const method = editingRouteId ? 'PUT' : 'POST';
-    const res    = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const res    = await fetch(url, {
+      method,
+      headers: authHeaders(),  // ✅ con token
+      body: JSON.stringify(body)
+    });
 
     if (res.ok) {
       showToast(editingRouteId ? 'Ruta actualizada ✓' : 'Ruta creada ✓', 'success');
@@ -137,7 +153,10 @@ function editRoute(r) {
 async function deleteRoute(id) {
   if (!confirm('¿Eliminar esta ruta? Esta acción no se puede deshacer.')) return;
   try {
-    const res = await fetch(`${API}/routes/${id}`, { method: 'DELETE' });
+    const res = await fetch(`${API}/routes/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders()  // ✅ con token
+    });
     if (res.ok) { showToast('Ruta eliminada', 'info'); loadRoutes(); }
     else showToast('Error al eliminar', 'error');
   } catch { showToast('Error de conexión', 'error'); }
@@ -159,7 +178,9 @@ document.getElementById('modalRuta').addEventListener('click', function(e) {
 // ── RESERVAS (solo ADMIN) ─────────────────────────────────────
 async function loadReservations() {
   try {
-    const res       = await fetch(`${API}/reservations`);
+    const res       = await fetch(`${API}/reservations`, {
+      headers: authHeaders()  // ✅ con token
+    });
     allReservations = await res.json();
     renderReservations(allReservations);
     updateResStats(allReservations);
@@ -212,7 +233,10 @@ function filterReservations() {
 
 async function confirmRes(id) {
   try {
-    const res = await fetch(`${API}/reservations/${id}/confirm`, { method: 'PUT' });
+    const res = await fetch(`${API}/reservations/${id}/confirm`, {
+      method: 'PUT',
+      headers: authHeaders()  // ✅ con token
+    });
     if (res.ok) { showToast('Reserva confirmada ✓', 'success'); loadReservations(); }
     else showToast('Error al confirmar', 'error');
   } catch { showToast('Error de conexión', 'error'); }
@@ -221,7 +245,10 @@ async function confirmRes(id) {
 async function cancelRes(id) {
   if (!confirm('¿Cancelar esta reserva? Se devolverá el cupo a la ruta.')) return;
   try {
-    const res = await fetch(`${API}/reservations/${id}/cancel`, { method: 'PUT' });
+    const res = await fetch(`${API}/reservations/${id}/cancel`, {
+      method: 'PUT',
+      headers: authHeaders()  // ✅ con token
+    });
     if (res.ok) { showToast('Reserva cancelada', 'info'); loadReservations(); }
     else showToast('Error al cancelar', 'error');
   } catch { showToast('Error de conexión', 'error'); }

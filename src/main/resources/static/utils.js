@@ -1,5 +1,5 @@
 // ─── CONFIGURACIÓN CENTRAL ────────────────────────────────────
-const API = 'http://terminal-env.eba-mtft8yu7.us-east-2.elasticbeanstalk.com';
+const API = 'https://terminal-env.eba-mtft8yu7.us-east-2.elasticbeanstalk.com:5000';
 
 // ─── TOAST NOTIFICATIONS ─────────────────────────────────────
 function showToast(message, type = 'info', duration = 3500) {

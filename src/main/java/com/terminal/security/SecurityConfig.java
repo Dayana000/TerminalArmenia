@@ -30,24 +30,30 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Archivos estaticos publicos
+                        // Estaticos
                         .requestMatchers("/*.html", "/*.js", "/*.css", "/").permitAll()
 
-                        // Endpoints publicos
-                        .requestMatchers("/users/login", "/users/register").permitAll()
+                        // Auth publica
+                        .requestMatchers("/users/login", "/users/register", "/users/verify").permitAll()
                         .requestMatchers(HttpMethod.GET, "/routes").permitAll()
 
-                        // Solo ADMIN puede crear, editar o eliminar rutas
-                        .requestMatchers(HttpMethod.POST, "/routes").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/routes/*").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/routes/*").hasRole("ADMIN")
+                        // ADMIN y EMPRESA pueden crear, editar o eliminar rutas
+                        .requestMatchers(HttpMethod.POST, "/routes").hasAnyRole("ADMIN", "EMPRESA")
+                        .requestMatchers(HttpMethod.PUT, "/routes/*").hasAnyRole("ADMIN", "EMPRESA")
+                        .requestMatchers(HttpMethod.DELETE, "/routes/*").hasAnyRole("ADMIN", "EMPRESA")
 
-                        // Reservas: autenticados
+                        // Reservas
                         .requestMatchers(HttpMethod.POST, "/reservations").authenticated()
                         .requestMatchers(HttpMethod.GET, "/reservations").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/reservations/user/*").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/reservations/*/cancel").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/reservations/*/confirm").hasRole("ADMIN")
+
+                        // Pagos
+                        .requestMatchers(HttpMethod.POST, "/payments/webhook").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/payments/simulate").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/payments/init").authenticated()
+                        .requestMatchers(HttpMethod.GET,  "/payments/status/*").authenticated()
 
                         // Usuarios: solo ADMIN
                         .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")

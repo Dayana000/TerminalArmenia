@@ -29,6 +29,10 @@ async function login() {
       const role = user.role.toUpperCase();
       sessionStorage.setItem('user', JSON.stringify(user));
       sessionStorage.setItem('role', role);
+
+      // ✅ Guardar token JWT si el backend lo devuelve
+      if (user.token) sessionStorage.setItem('token', user.token);
+
       showToast(`¡Bienvenido/a, ${user.name}!`, 'success');
       setTimeout(() => {
         if (role === 'PASAJERO') window.location.href = 'routes-view.html';

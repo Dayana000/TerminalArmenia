@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del Pago — Terminal Armenia</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="headerMount"></div>
+
+<div class="page-wrapper" style="max-width:560px;margin:60px auto;text-align:center">
+    <div id="resultContent" style="padding:40px 0">
+        <div class="spinner" style="margin:0 auto 20px;width:40px;height:40px"></div>
+        <p style="color:var(--muted)">Verificando tu pago…</p>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script src="utils.js"></script>
+<script>
+    document.getElementById('headerMount').innerHTML = renderHeader('Resultado del Pago');
+
+    var params = new URLSearchParams(window.location.search);
+    var ref    = params.get('ref');   // wompiReference
+    var resNum = params.get('res');   // reservationNumber
+
+    async function checkPayment() {
+        if (!ref) { showError('No se encontró la referencia de pago.'); return; }
+
+        var token   = sessionStorage.getItem('token');
+        var headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        // Polling cada 2s, máximo 20s (10 intentos)
+        var maxTries = 10, tried = 0;
+        var interval = setInterval(async function() {
+            tried++;
+            try {
+                var res  = await fetch(API + '/payments/status/' + ref, { headers: headers });
+                if (!res.ok) {
+                    if (tried >= maxTries) { clearInterval(interval); showError('No se pudo verificar el pago.'); }
+                    return;
+                }
+                var data = await res.json();
+                if (data.status === 'APROBADO') {
+                    clearInterval(interval); showSuccess(data);
+                } else if (data.status === 'RECHAZADO' || data.status === 'CANCELADO') {
+                    clearInterval(interval); showFailed(data.status);
+                } else if (tried >= maxTries) {
+                    clearInterval(interval); showPending();
+                }
+            } catch(e) {
+                if (tried >= maxTries) { clearInterval(interval); showError('Error de conexión.'); }
+            }
+        }, 2000);
+    }
+
+    function showSuccess(payment) {
+        document.getElementById('resultContent').innerHTML =
+            '<div style="font-size:72px;margin-bottom:16px">✅</div>' +
+            '<h2 style="font-size:24px;color:var(--success);margin-bottom:8px">¡Pago Confirmado!</h2>' +
+            '<p style="color:var(--muted);margin-bottom:24px">Tu reserva ha sido confirmada exitosamente</p>' +
+            '<div style="background:var(--bg3);border:2px dashed var(--border);border-radius:14px;padding:24px;margin-bottom:24px">' +
+            '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px">N° de Reserva</div>' +
+            '<div style="font-size:26px;font-weight:800;color:var(--accent);font-family:monospace">' + (resNum || '—') + '</div>' +
+            '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:14px 0 6px">Factura</div>' +
+            '<div style="font-size:16px;font-weight:600;color:var(--text)">' + (payment.invoiceNumber || '—') + '</div>' +
+            '</div>' +
+            '<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;' +
+            'padding:14px;margin-bottom:24px;font-size:13px;color:#86efac">' +
+            '📧 Te enviamos el <strong>tiquete PDF</strong> con código QR y la <strong>factura electrónica</strong> a tu correo.' +
+            '</div>' +
+            '<button class="btn btn-primary" onclick="window.location.href=\'routes-view.html\'">Ver mis reservas</button>';
+    }
+
+    function showFailed(status) {
+        document.getElementById('resultContent').innerHTML =
+            '<div style="font-size:72px;margin-bottom:16px">❌</div>' +
+            '<h2 style="font-size:24px;color:var(--danger);margin-bottom:8px">Pago ' + (status === 'CANCELADO' ? 'Cancelado' : 'Rechazado') + '</h2>' +
+            '<p style="color:var(--muted);margin-bottom:24px">Tu reserva fue cancelada automáticamente y el asiento quedó disponible.</p>' +
+            '<button class="btn btn-primary" onclick="window.location.href=\'routes-view.html\'">Volver a rutas</button>';
+    }
+
+    function showPending() {
+        document.getElementById('resultContent').innerHTML =
+            '<div style="font-size:72px;margin-bottom:16px">⏳</div>' +
+            '<h2 style="font-size:24px;color:var(--warning);margin-bottom:8px">Pago en Proceso</h2>' +
+            '<p style="color:var(--muted);margin-bottom:12px">Tu pago está siendo procesado. Recibirás un correo cuando se confirme.</p>' +
+            '<p style="font-size:13px;color:var(--muted);margin-bottom:24px">Reserva: <strong style="color:var(--text)">' + (resNum || '—') + '</strong></p>' +
+            '<button class="btn btn-primary" onclick="window.location.href=\'routes-view.html\'">Ver mis reservas</button>';
+    }
+
+    function showError(msg) {
+        document.getElementById('resultContent').innerHTML =
+            '<div style="font-size:72px;margin-bottom:16px">⚠️</div>' +
+            '<h2 style="font-size:24px;color:var(--warning);margin-bottom:8px">Error</h2>' +
+            '<p style="color:var(--muted);margin-bottom:24px">' + msg + '</p>' +
+            '<button class="btn btn-primary" onclick="window.location.href=\'routes-view.html\'">Volver</button>';
+    }
+
+    checkPayment();
+</script>
+</body>
+</html>

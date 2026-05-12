@@ -1,47 +1,56 @@
-async function register() {
-    const name     = document.getElementById('name').value.trim();
-    const email    = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const role     = document.getElementById('role').value;
+var pendingEmail = '';
 
-    if (!name || !email || !password || !role) {
+// PASO 1: Registrar
+async function register() {
+    var name            = document.getElementById('name').value.trim();
+    var email           = document.getElementById('email').value.trim();
+    var password        = document.getElementById('password').value;
+    var passwordConfirm = document.getElementById('passwordConfirm').value;
+    var role            = document.getElementById('role').value;
+
+    if (!name || !email || !password || !passwordConfirm || !role) {
         showToast('Por favor completa todos los campos', 'error'); return;
     }
+    if (password !== passwordConfirm) {
+        showToast('Las contrasenas no coinciden', 'error'); return;
+    }
     if (password.length < 8) {
-        showToast('La contraseña debe tener al menos 8 caracteres', 'error'); return;
+        showToast('La contrasena debe tener al menos 8 caracteres', 'error'); return;
     }
     if (!/[a-zA-Z]/.test(password)) {
-        showToast('La contraseña debe contener al menos una letra', 'error'); return;
+        showToast('La contrasena debe contener al menos una letra', 'error'); return;
     }
     if (!/[0-9]/.test(password)) {
-        showToast('La contraseña debe contener al menos un número', 'error'); return;
+        showToast('La contrasena debe contener al menos un numero', 'error'); return;
     }
 
-    const btn     = document.getElementById('registerBtn');
-    const btnText = document.getElementById('btnText');
-    const spinner = document.getElementById('btnSpinner');
-    btn.disabled  = true;
-    btnText.textContent = 'Registrando...';
+    var btn     = document.getElementById('registerBtn');
+    var btnText = document.getElementById('btnText');
+    var spinner = document.getElementById('btnSpinner');
+    btn.disabled = true;
+    btnText.textContent = 'Enviando...';
     spinner.style.display = 'inline-block';
 
     try {
-        const res  = await fetch(`${API}/users/register`, {
+        var res  = await fetch(API + '/users/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password, role })
         });
-        const text = await res.text();
+        var text = await res.text();
+        var data;
+        try { data = JSON.parse(text); } catch(e) { data = null; }
 
-        let user;
-        try { user = JSON.parse(text); } catch { user = null; }
-
-        if (user && user.id) {
-            showToast('¡Cuenta creada correctamente!', 'success');
-            setTimeout(() => window.location.href = 'login.html', 1000);
+        if (res.ok && data && data.requiresVerification) {
+            pendingEmail = email;
+            document.getElementById('emailDisplay').textContent = email;
+            document.getElementById('stepRegister').style.display = 'none';
+            document.getElementById('stepVerify').style.display = '';
+            showToast('Codigo enviado a tu correo', 'success');
         } else {
             showToast(text || 'Error al crear la cuenta', 'error');
         }
-    } catch {
+    } catch(e) {
         showToast('Error al conectar con el servidor', 'error');
     } finally {
         btn.disabled = false;
@@ -50,4 +59,65 @@ async function register() {
     }
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Enter') register(); });
+// PASO 2: Verificar codigo
+async function verifyCode() {
+    var code = document.getElementById('verifyCode').value.trim();
+    if (!code || code.length !== 6) {
+        showToast('Ingresa el codigo de 6 digitos', 'error'); return;
+    }
+
+    var btn     = document.getElementById('verifyBtn');
+    var btnText = document.getElementById('verifyBtnText');
+    var spinner = document.getElementById('verifySpinner');
+    btn.disabled = true;
+    btnText.textContent = 'Verificando...';
+    spinner.style.display = 'inline-block';
+
+    try {
+        var res  = await fetch(API + '/users/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: pendingEmail, code: code })
+        });
+        var text = await res.text();
+
+        if (res.ok) {
+            showToast('Correo verificado. Redirigiendo...', 'success');
+            setTimeout(function() { window.location.href = 'login.html'; }, 1500);
+        } else {
+            showToast(text || 'Codigo incorrecto', 'error');
+        }
+    } catch(e) {
+        showToast('Error de conexion', 'error');
+    } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Verificar Codigo';
+        spinner.style.display = 'none';
+    }
+}
+
+// Reenviar codigo
+async function resendCode() {
+    if (!pendingEmail) return;
+    showToast('Reenviando codigo...', 'info');
+    try {
+        await fetch(API + '/users/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: pendingEmail, name: '', password: 'temporal1', role: 'PASAJERO' })
+        });
+        showToast('Codigo reenviado a ' + pendingEmail, 'success');
+    } catch(e) {
+        showToast('Error al reenviar', 'error');
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        if (document.getElementById('stepVerify').style.display !== 'none') {
+            verifyCode();
+        } else {
+            register();
+        }
+    }
+});
