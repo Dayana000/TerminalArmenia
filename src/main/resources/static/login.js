@@ -35,7 +35,7 @@ async function login() {
 
       showToast(`¡Bienvenido/a, ${user.name}!`, 'success');
       setTimeout(() => {
-        if (role === 'PASAJERO') window.location.href = 'routes-view.html';
+        if (role === 'PASAJERO' || role === 'USER') window.location.href = 'routes-view.html';
         else window.location.href = 'routes.html';
       }, 800);
     } else {

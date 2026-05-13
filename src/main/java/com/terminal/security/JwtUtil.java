@@ -2,18 +2,33 @@ package com.terminal.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import java.security.Key;
 import java.util.Date;
 
+@Slf4j
 @Component
 public class JwtUtil {
 
-    private static final String SECRET = "clave-secreta-terminal-armenia-2026-segura";
+    @Value("${jwt.secret}")
+    private String secret;
+
     private static final long EXPIRATION_MS = 86400000; // 24 horas
 
-    private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
+    private Key key;
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = secret.getBytes();
+        if (keyBytes.length < 32) {
+            log.warn("[JwtUtil] JWT secret tiene menos de 32 bytes — usa una clave mas larga en produccion");
+        }
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+    }
 
     public String generateToken(String email, String role) {
         return Jwts.builder()

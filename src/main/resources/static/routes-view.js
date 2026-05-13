@@ -1,4 +1,4 @@
-if (!requireAuth(['PASAJERO'])) { /* redirige automaticamente */ }
+if (!requireAuth(['PASAJERO', 'USER'])) { /* redirige automaticamente */ }
 
 document.getElementById('headerMount').innerHTML = renderHeader('Portal del Pasajero');
 
@@ -78,9 +78,10 @@ function renderRoutes(routes) {
 }
 
 // MODAL RESERVA
-function openReservationModal(routeId) {
+async function openReservationModal(routeId) {
     selectedRoute = allRoutes.find(function(r) { return r.id === routeId; });
     if (!selectedRoute) return;
+
     document.getElementById('modalRouteSummary').innerHTML =
         '<div class="route-title">' + selectedRoute.origin + ' → ' + selectedRoute.destination + '</div>' +
         '<div class="route-details">' +
@@ -88,14 +89,57 @@ function openReservationModal(routeId) {
         '<div>💺 ' + selectedRoute.availableSeats + ' disponibles</div>' +
         '<div>💰 ' + formatPrice(selectedRoute.price) + '</div>' +
         '</div>';
+
     document.getElementById('seatInput').value = '';
+    document.getElementById('seatSelectionText').innerHTML = 'Haz clic en un asiento verde';
+    
+    var mapContainer = document.getElementById('seatMap');
+    mapContainer.innerHTML = '<div style="text-align:center;padding:20px;grid-column:1/-1"><div class="spinner"></div><p>Cargando asientos...</p></div>';
+
     openModal('modalReserva');
+
+    try {
+        // Consultar asientos ocupados desde el backend
+        var res = await fetch(API + '/reservations/route/' + routeId + '/seats', { headers: authHeaders() });
+        var takenSeats = await res.json(); // Lista de strings ej: ["1", "5", "12"]
+
+        var html = '';
+        var capacity = selectedRoute.capacity || 40;
+
+        for (var i = 1; i <= capacity; i++) {
+            var seatNum = i.toString();
+            var isTaken = takenSeats.includes(seatNum);
+            var cls = isTaken ? 'seat-btn taken' : 'seat-btn available';
+            var attr = isTaken ? 'disabled' : 'onclick="selectSeat(\'' + seatNum + '\', this)"';
+            
+            html += '<button class="' + cls + '" ' + attr + '>' + seatNum + '</button>';
+        }
+        mapContainer.innerHTML = html;
+
+    } catch (e) {
+        mapContainer.innerHTML = '<p style="color:var(--danger);grid-column:1/-1;text-align:center">Error al cargar el mapa de asientos</p>';
+    }
+}
+
+function selectSeat(num, el) {
+    // Desmarcar anterior
+    document.querySelectorAll('.seat-btn.selected').forEach(function(b) {
+        b.classList.remove('selected');
+        b.classList.add('available');
+    });
+
+    // Marcar actual
+    el.classList.remove('available');
+    el.classList.add('selected');
+    
+    document.getElementById('seatInput').value = num;
+    document.getElementById('seatSelectionText').innerHTML = 'Asiento seleccionado: <span style="color:var(--accent)">' + num + '</span>';
 }
 
 // PASO 1: Crear reserva → PASO 2: Abrir modal de pago simulado
 async function confirmReservation() {
     var seat = document.getElementById('seatInput').value.trim();
-    if (!seat) { showToast('Ingresa el numero de asiento', 'error'); return; }
+    if (!seat) { showToast('Por favor, selecciona un asiento en el mapa', 'error'); return; }
     if (!selectedRoute) return;
 
     var userId    = getUserId();

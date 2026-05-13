@@ -11,7 +11,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/routes")
-@CrossOrigin("*")
 public class RouteController {
 
     @Autowired

@@ -54,9 +54,16 @@
         </div>
         <div class="modal-route-summary" id="modalRouteSummary"></div>
         <div class="form-group">
-            <label>Número de asiento</label>
-            <input id="seatInput" type="text" placeholder="Ej. 12A, 7B, 23C…">
-            <p class="text-muted mt-8">Ingresa el código del asiento que deseas</p>
+            <label>Selecciona tu Asiento</label>
+            <div id="seatMap" class="seat-map"></div>
+            <input type="hidden" id="seatInput" value="">
+            
+            <div class="seat-legend">
+                <div class="legend-item"><div class="seat-box available"></div> Libre</div>
+                <div class="legend-item"><div class="seat-box selected"></div> Tu selección</div>
+                <div class="legend-item"><div class="seat-box taken"></div> Ocupado</div>
+            </div>
+            <p id="seatSelectionText" class="text-muted mt-8" style="text-align:center;font-weight:600">Haz clic en un asiento verde</p>
         </div>
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeModal('modalReserva')">Cancelar</button>

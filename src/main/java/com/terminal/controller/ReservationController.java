@@ -1,138 +1,73 @@
 package com.terminal.controller;
 
 import com.terminal.model.Reservation;
-import com.terminal.model.Route;
-import com.terminal.model.User;
-import com.terminal.repository.ReservationRepository;
-import com.terminal.repository.RouteRepository;
-import com.terminal.repository.UserRepository;
+import com.terminal.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/reservations")
-@CrossOrigin("*")
 public class ReservationController {
 
-    @Autowired
-    private ReservationRepository reservationRepository;
-
-    @Autowired
-    private RouteRepository routeRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    @Autowired private ReservationService reservationService;
 
     // POST /reservations — Crear reserva (requiere autenticacion)
     @PostMapping
-    public Object createReservation(@RequestBody Reservation reservation) {
-
-        if (reservation.getUserId() == null)
-            return ResponseEntity.badRequest().body("El ID del usuario es obligatorio");
-        if (reservation.getRouteId() == null)
-            return ResponseEntity.badRequest().body("El ID de la ruta es obligatorio");
-        if (reservation.getSeat() == null || reservation.getSeat().isBlank())
-            return ResponseEntity.badRequest().body("El asiento es obligatorio");
-
-        Optional<User> userOpt = userRepository.findById(reservation.getUserId());
-        if (userOpt.isEmpty())
-            return ResponseEntity.badRequest().body("Usuario no encontrado");
-
-        Optional<Route> routeOpt = routeRepository.findById(reservation.getRouteId());
-        if (routeOpt.isEmpty())
-            return ResponseEntity.badRequest().body("Ruta no encontrada");
-
-        Route route = routeOpt.get();
-        User user = userOpt.get();
-
-        // Validar disponibilidad de cupos
-        if (route.getAvailableSeats() == null || route.getAvailableSeats() <= 0)
-            return ResponseEntity.badRequest().body("No hay asientos disponibles para esta ruta");
-
-        // Validar que el asiento no este ya reservado en esta ruta (Bug RNF-11 corregido)
-        boolean seatTaken = reservationRepository.findByRouteId(reservation.getRouteId())
-                .stream()
-                .anyMatch(r -> r.getSeat().equals(reservation.getSeat())
-                        && !"CANCELADA".equals(r.getStatus()));
-
-        if (seatTaken)
-            return ResponseEntity.badRequest().body("El asiento " + reservation.getSeat() + " ya esta reservado en esta ruta");
-
-        // Descontar cupo
-        route.setAvailableSeats(route.getAvailableSeats() - 1);
-        routeRepository.save(route);
-
-        // Generar numero unico
-        String reservationNumber = "TKT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-
-        reservation.setReservationNumber(reservationNumber);
-        reservation.setStatus("RESERVADA");
-        reservation.setCreatedAt(LocalDateTime.now());
-        reservation.setPassengerName(user.getName());
-        reservation.setOrigin(route.getOrigin());
-        reservation.setDestination(route.getDestination());
-        reservation.setSchedule(route.getSchedule());
-        reservation.setPrice(route.getPrice());
-
-        Reservation saved = reservationRepository.save(reservation);
-        return ResponseEntity.ok(saved);
+    public ResponseEntity<?> createReservation(@RequestBody Reservation reservation) {
+        try {
+            Reservation saved = reservationService.createReservation(reservation);
+            return ResponseEntity.ok(saved);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // GET /reservations — Todas las reservas (solo ADMIN)
     @GetMapping
     public List<Reservation> getAllReservations() {
-        return reservationRepository.findAll();
+        return reservationService.getAllReservations();
     }
 
     // GET /reservations/user/{userId} — Reservas de un usuario
     @GetMapping("/user/{userId}")
     public List<Reservation> getReservationsByUser(@PathVariable Long userId) {
-        return reservationRepository.findByUserId(userId);
+        return reservationService.getReservationsByUser(userId);
     }
 
     // PUT /reservations/{id}/cancel — Cancelar reserva y devolver cupo
     @PutMapping("/{id}/cancel")
-    public Object cancelReservation(@PathVariable Long id) {
-        Optional<Reservation> resOpt = reservationRepository.findById(id);
-        if (resOpt.isEmpty())
+    public ResponseEntity<?> cancelReservation(@PathVariable Long id) {
+        try {
+            Reservation cancelled = reservationService.cancelReservation(id);
+            return ResponseEntity.ok(cancelled);
+        } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
-
-        Reservation reservation = resOpt.get();
-
-        if ("CANCELADA".equals(reservation.getStatus()))
-            return ResponseEntity.badRequest().body("La reserva ya esta cancelada");
-
-        Optional<Route> routeOpt = routeRepository.findById(reservation.getRouteId());
-        routeOpt.ifPresent(route -> {
-            route.setAvailableSeats(route.getAvailableSeats() + 1);
-            routeRepository.save(route);
-        });
-
-        reservation.setStatus("CANCELADA");
-        reservationRepository.save(reservation);
-        return ResponseEntity.ok(reservation);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // PUT /reservations/{id}/confirm — Confirmar reserva (solo ADMIN)
     @PutMapping("/{id}/confirm")
-    public Object confirmReservation(@PathVariable Long id) {
-        Optional<Reservation> resOpt = reservationRepository.findById(id);
-        if (resOpt.isEmpty())
+    public ResponseEntity<?> confirmReservation(@PathVariable Long id) {
+        try {
+            Reservation confirmed = reservationService.confirmReservation(id);
+            return ResponseEntity.ok(confirmed);
+        } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
-        Reservation reservation = resOpt.get();
-
-        if ("CANCELADA".equals(reservation.getStatus()))
-            return ResponseEntity.badRequest().body("No se puede confirmar una reserva cancelada");
-
-        reservation.setStatus("CONFIRMADA");
-        reservationRepository.save(reservation);
-        return ResponseEntity.ok(reservation);
+    // GET /reservations/route/{routeId}/seats — Obtener asientos ocupados de una ruta
+    @GetMapping("/route/{routeId}/seats")
+    public ResponseEntity<List<String>> getTakenSeatsForRoute(@PathVariable Long routeId) {
+        List<String> takenSeats = reservationService.getTakenSeatsForRoute(routeId);
+        return ResponseEntity.ok(takenSeats);
     }
 }

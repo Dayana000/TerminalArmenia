@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -22,6 +23,7 @@ public class User {
     // Verificacion de correo
     private Boolean verified = false;
     private String verificationCode;
+    private LocalDateTime verificationCodeExpiry;
 
     public User() {}
 
@@ -47,4 +49,6 @@ public class User {
     public void setVerified(Boolean verified) { this.verified = verified; }
     public String getVerificationCode() { return verificationCode; }
     public void setVerificationCode(String verificationCode) { this.verificationCode = verificationCode; }
+    public LocalDateTime getVerificationCodeExpiry() { return verificationCodeExpiry; }
+    public void setVerificationCodeExpiry(LocalDateTime verificationCodeExpiry) { this.verificationCodeExpiry = verificationCodeExpiry; }
 }

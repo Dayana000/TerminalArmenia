@@ -33,8 +33,9 @@ public class SecurityConfig {
                         // Estaticos
                         .requestMatchers("/*.html", "/*.js", "/*.css", "/").permitAll()
 
-                        // Auth publica
+                        // Auth publica y Monitoreo
                         .requestMatchers("/users/login", "/users/register", "/users/verify").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/routes").permitAll()
 
                         // ADMIN y EMPRESA pueden crear, editar o eliminar rutas
@@ -57,6 +58,7 @@ public class SecurityConfig {
 
                         // Usuarios: solo ADMIN
                         .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/users/admin/create").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )

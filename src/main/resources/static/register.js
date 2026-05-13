@@ -6,9 +6,8 @@ async function register() {
     var email           = document.getElementById('email').value.trim();
     var password        = document.getElementById('password').value;
     var passwordConfirm = document.getElementById('passwordConfirm').value;
-    var role            = document.getElementById('role').value;
 
-    if (!name || !email || !password || !passwordConfirm || !role) {
+    if (!name || !email || !password || !passwordConfirm) {
         showToast('Por favor completa todos los campos', 'error'); return;
     }
     if (password !== passwordConfirm) {
@@ -35,7 +34,7 @@ async function register() {
         var res  = await fetch(API + '/users/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, role })
+            body: JSON.stringify({ name, email, password, role: 'USER' })
         });
         var text = await res.text();
         var data;

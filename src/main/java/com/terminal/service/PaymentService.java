@@ -11,10 +11,12 @@ import com.terminal.repository.RouteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class PaymentService {
 
@@ -129,7 +131,8 @@ public class PaymentService {
                     emailService.sendConfirmationEmail(reservation, payment, ticketPath, invoicePath);
                 }
             } catch (Exception e) {
-                System.err.println("[PaymentService] Error en PDFs/correo: " + e.getMessage());
+                log.error("[PaymentService] Error generando PDFs o enviando correo para reserva {}: {}",
+                        payment.getReservationId(), e.getMessage(), e);
             }
         });
     }

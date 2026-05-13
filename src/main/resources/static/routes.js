@@ -7,6 +7,7 @@ document.getElementById('headerMount').innerHTML = renderHeader('Panel de Admini
 const role = getRole();
 let allRoutes = [];
 let allReservations = [];
+let allUsers = [];
 let editingRouteId = null;
 
 // ✅ Helper para incluir token JWT en todas las peticiones
@@ -24,12 +25,19 @@ function showTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('secRutas').style.display    = tab === 'rutas'    ? '' : 'none';
   document.getElementById('secReservas').style.display = tab === 'reservas' ? '' : 'none';
-  event.target.classList.add('active');
+  document.getElementById('secUsuarios').style.display = tab === 'usuarios' ? '' : 'none';
+  if (event) event.target.classList.add('active');
   if (tab === 'reservas') loadReservations();
+  if (tab === 'usuarios') loadUsers();
 }
 
-// Ocultar tab reservas para EMPRESA
-if (role !== 'ADMIN') document.getElementById('tabReservas').style.display = 'none';
+// Ocultar tabs protegidos si no es ADMIN
+if (role !== 'ADMIN') {
+  const tRes = document.getElementById('tabReservas');
+  const tUsu = document.getElementById('tabUsuarios');
+  if (tRes) tRes.style.display = 'none';
+  if (tUsu) tUsu.style.display = 'none';
+}
 
 // ── RUTAS ────────────────────────────────────────────────────
 async function loadRoutes() {
@@ -253,6 +261,88 @@ async function cancelRes(id) {
     else showToast('Error al cancelar', 'error');
   } catch { showToast('Error de conexión', 'error'); }
 }
+
+// ── USUARIOS (solo ADMIN) ─────────────────────────────────────
+async function loadUsers() {
+  try {
+    const res = await fetch(`${API}/users`, { headers: authHeaders() });
+    allUsers = await res.json();
+    renderUsers(allUsers);
+  } catch { showToast('Error al cargar usuarios', 'error'); }
+}
+
+function renderUsers(list) {
+  const tbody = document.getElementById('usersTableBody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--muted)">No hay usuarios</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(u => {
+    const roleBadge = u.role === 'ADMIN' ? '⚙️ Admin' : u.role === 'EMPRESA' ? '🏢 Empresa' : '🧳 Pasajero';
+    const verifBadge = u.verified ? '<span style="color:var(--success)">✅ Sí</span>' : '<span style="color:var(--warning)">⏳ Pendiente</span>';
+    return `<tr>
+      <td><strong>${u.name || '—'}</strong></td>
+      <td>${u.email}</td>
+      <td>${roleBadge}</td>
+      <td>${verifBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('searchUser').value.toLowerCase();
+  renderUsers(allUsers.filter(u =>
+    u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)
+  ));
+}
+
+async function saveUser() {
+  const name     = document.getElementById('uName').value.trim();
+  const email    = document.getElementById('uEmail').value.trim();
+  const password = document.getElementById('uPassword').value;
+  const role     = document.getElementById('uRole').value;
+
+  if (!name || !email || !password) { showToast('Todos los campos son obligatorios', 'error'); return; }
+
+  const btnText = document.getElementById('saveUserBtnText');
+  const spinner = document.getElementById('saveUserSpinner');
+  btnText.textContent = 'Creando...';
+  spinner.style.display = 'inline-block';
+
+  try {
+    const res = await fetch(`${API}/users/admin/create`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ name, email, password, role })
+    });
+
+    if (res.ok) {
+      showToast('Usuario creado ✓', 'success');
+      closeModal('modalUsuario');
+      document.getElementById('uName').value = '';
+      document.getElementById('uEmail').value = '';
+      document.getElementById('uPassword').value = '';
+      loadUsers();
+    } else {
+      const t = await res.text();
+      showToast(t || 'Error al crear usuario', 'error');
+    }
+  } catch { showToast('Error de conexión', 'error'); }
+  finally {
+    btnText.textContent = 'Crear Usuario';
+    spinner.style.display = 'none';
+  }
+}
+
+// Reset form modal de usuario
+document.getElementById('modalUsuario').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeModal('modalUsuario');
+    document.getElementById('uName').value = '';
+    document.getElementById('uEmail').value = '';
+    document.getElementById('uPassword').value = '';
+  }
+});
 
 // ── INIT ──────────────────────────────────────────────────────
 loadRoutes();

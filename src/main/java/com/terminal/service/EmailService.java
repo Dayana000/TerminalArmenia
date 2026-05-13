@@ -5,6 +5,7 @@ import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.*;
 import com.terminal.model.Payment;
 import com.terminal.model.Reservation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.nio.file.Files;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 
+@Slf4j
 @Service
 public class EmailService {
 
@@ -89,7 +91,9 @@ public class EmailService {
         request.setEndpoint("mail/send");
         request.setBody(mail.build());
         Response response = sg.api(request);
+        log.info("[EmailService] SendGrid respondio con status: {}", response.getStatusCode());
         if (response.getStatusCode() >= 400) {
+            log.error("[EmailService] Error SendGrid {}: {}", response.getStatusCode(), response.getBody());
             throw new IOException("SendGrid error: " + response.getStatusCode() + " - " + response.getBody());
         }
     }
